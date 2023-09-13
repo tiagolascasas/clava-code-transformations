@@ -37,16 +37,46 @@ class TripCountCalculator {
         const incData = TripCountCalculator.#getIncrementData(incrementExpr);
         const increment = incData[0];
         const incrementVar = incData[1];
+        const op = incData[2];
 
-        println(`${inductionVar}|${boundVar}|${incrementVar} : ${initialVal}|${bound}|${increment}`);
+        println(`${inductionVar}|${boundVar}|${incrementVar} : ${initialVal}|${bound}|${increment}|${op}`);
 
         if ((inductionVar != boundVar) && (boundVar != incrementVar)) {
             // on a canonical loop, the same ind var needs to be used for all 3 statements
             return -1;
         }
-        const tripCount = TripCountCalculator.#calculateTripCount(initialVal, bound, increment);
+        const tripCount = TripCountCalculator.#calculateTripCount(initialVal, bound, increment, op);
 
         return tripCount;
+    }
+
+    static #calculateTripCount(initialVal, bound, increment, op) {
+        const iterationSpace = Math.abs(bound - initialVal);
+
+        if (op == "add" || op == "sub") {
+            if (increment == 0) {
+                return -1;
+            }
+
+            if (initialVal > bound && op == "add") {
+                return -1;
+            }
+            if (initialVal < bound && op == "sub") {
+                return -1;
+            }
+            return Math.floor(iterationSpace / Math.abs(increment));
+        }
+        if (op == "mul" || op == "div") {
+            if (increment == 1 || increment == 0) {
+                return -1;
+            }
+            return Math.floor(TripCountCalculator.logBase(increment, iterationSpace));
+        }
+        return -1;
+    }
+
+    static logBase(base, number) {
+        return Math.log(number) / Math.log(base);
     }
 
     static #getInitializationData(initExpr) {
@@ -109,80 +139,87 @@ class TripCountCalculator {
 
     static #getIncrementData(incExpr) {
         if (incExpr.numChildren == 1 && incExpr.children[0].instanceOf("unaryOp")) {
-            const unaryOp = incExpr.children[0];
-            const operand = unaryOp.children[0];
-
-            if (operand.instanceOf("varref")) {
-                const incrementVar = operand.name;
-                const increment = 1;
-
-                switch (unaryOp.kind) {
-                    case "pre_inc":
-                        return [increment, incrementVar];
-                    case "pre_dec":
-                        return [-increment, incrementVar];
-                    case "post_inc":
-                        return [increment, incrementVar];
-                    case "post_dec":
-                        return [-increment, incrementVar];
-                    default:
-                        return [-1, incrementVar];
-                }
-            }
+            return TripCountCalculator.#handleUnaryIncrement(incExpr);
         }
         if (incExpr.numChildren == 1 && incExpr.children[0].instanceOf("binaryOp")) {
-            const binaryOp = incExpr.children[0];
-            const lhs = binaryOp.children[0];
-            const rhs = binaryOp.children[1];
+            return TripCountCalculator.#handleBinaryIncrement(incExpr);
+        }
+    }
 
-            if (lhs.instanceOf("varref") && rhs.instanceOf("intLiteral")) {
-                const incVar = lhs.name;
-                const inc = rhs.value;
+    static #handleUnaryIncrement(incExpr) {
+        const unaryOp = incExpr.children[0];
+        const operand = unaryOp.children[0];
 
-                switch (binaryOp.kind) {
-                    case "add":
-                        return [inc, incVar];
-                    case "sub":
-                        return [-inc, incVar];
-                    default:
-                        return [-1, incVar];
-                }
-            }
-            if (lhs.instanceOf("intLiteral") && rhs.instanceOf("varref")) {
-                const incVar = rhs.name;
-                const inc = lhs.value;
+        if (operand.instanceOf("varref")) {
+            const incVar = operand.name;
+            const inc = 1;
 
-                switch (binaryOp.kind) {
-                    case "add":
-                        return [inc, incVar];
-                    case "sub":
-                        return [-inc, incVar];
-                    default:
-                        return [-1, incVar];
-                }
+            switch (unaryOp.kind) {
+                case "pre_inc":
+                    return [inc, incVar, "add"];
+                case "pre_dec":
+                    return [-inc, incVar, "sub"];
+                case "post_inc":
+                    return [inc, incVar, "add"];
+                case "post_dec":
+                    return [-inc, incVar, "sub"];
+                default:
+                    return [-1, incVar, "nop"];
             }
         }
         return [-1, "nil"];
     }
 
-    static #calculateTripCount(initialVal, bound, increment) {
-        if (increment == 0) {
-            return -1;
+    static #handleBinaryIncrement(incExpr) {
+        const binaryOp = incExpr.children[0];
+        const lhs = binaryOp.children[0];
+        const rhs = binaryOp.children[1];
+
+        let incVar = "nil";
+        let inc = -1;
+        let opKind = "nop";
+
+        // e.g., i += 2
+        if (lhs.instanceOf("varref") && rhs.instanceOf("intLiteral")) {
+            incVar = lhs.name;
+            inc = rhs.value;
+            opKind = binaryOp.kind;
+        }
+        // e.g., i = i + 2
+        else if (lhs.instanceOf("varref") && rhs.instanceOf("binaryOp") && binaryOp.kind == "assign") {
+            incVar = lhs.name;
+            const childOp = rhs;
+            const childLhs = childOp.children[0];
+            const childRhs = childOp.children[1];
+
+            const childVar = childLhs.instanceOf("varref") ? childLhs : childRhs;
+            const childInc = childLhs.instanceOf("intLiteral") ? childLhs : childRhs;
+
+            if (childVar.name == incVar) {
+                inc = childInc.value;
+                opKind = childOp.kind;
+            }
+            else {
+                return [-1, "nil", "nop"];
+            }
+        }
+        // anything weirder than that is not supported
+        else {
+            return [-1, "nil", "nop"];
         }
 
-        if (increment > 0) {
-            if (initialVal > bound) {
-                return -1;
-            }
-            return Math.floor((bound - initialVal) / increment);
+        switch (opKind) {
+            case "add": case "add_assign":
+                return [inc, incVar, "add"];
+            case "sub": case "sub_assign":
+                return [-inc, incVar, "sub"];
+            case "mul": case "mul_assign":
+                return [inc, incVar, "mul"];
+            case "div": case "div_assign":
+                return [inc, incVar, "div"];
+            default:
+                return [-1, incVar, "nop"];
         }
-        if (increment < 0) {
-            if (initialVal < bound) {
-                return -1;
-            }
-            return Math.floor((initialVal - bound) / -increment);
-        }
-        return -1;
     }
 
     static #handleWhileLoop(loop) {

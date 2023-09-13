@@ -14,6 +14,14 @@ void foo(int A[100], int B[200], int C[300])
     {
         B[i] = 0;
     }
+    for (int i = 0; i <= 200; i *= 2)
+    {
+        B[i] = 0;
+    }
+    for (int i = 0; i <= 200; i = i * 2)
+    {
+        B[i] = 0;
+    }
     for (int i = 0; 300 > i; i++)
     {
         C[i] = 0;
