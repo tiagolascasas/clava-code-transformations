@@ -1,0 +1,2 @@
+ASTConsumer built 1
+ASTConsumer destroyed 1
