@@ -4,5 +4,5 @@ if "%~2"=="" (
     exit /b 1
 )
 cd src 
-call clava ../test/%1 -pi -par -cr -cl -cs -s -cfs -p ../test/input/%2 -b 0 -of ../woven_code -i ..
+call clava ../test/%1 -pi -par -cr -cl -cs -s -nci -cfs -p ../test/input/%2 -b 0 -of ../woven_code -i ..
 cd ..

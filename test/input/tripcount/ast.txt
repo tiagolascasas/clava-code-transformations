@@ -1,0 +1,206 @@
+file
+   function  {sig: foo(int *, int *, int *)}
+     param  {name: A}  {type: adjustedType}
+     param  {name: B}  {type: adjustedType}
+     param  {name: C}  {type: adjustedType}
+     body
+       declStmt
+         vardecl  {name: idx}  {type: builtinType}
+       declStmt
+         vardecl  {name: idx2}  {type: builtinType}
+           intLiteral
+       declStmt
+         vardecl  {name: idx3}  {type: builtinType}
+           intLiteral
+       loop
+         declStmt
+           vardecl  {name: i}  {type: builtinType}
+             intLiteral
+         exprStmt
+           binaryOp  {kind: lt}
+             varref  {name: i}  {type: builtinType}
+             intLiteral
+         exprStmt
+           unaryOp  {kind: post_inc}
+             varref  {name: i}  {type: builtinType}
+         body
+           exprStmt
+             binaryOp  {kind: assign}
+               arrayAccess
+                 varref  {name: A}  {type: adjustedType}
+                 varref  {name: i}  {type: builtinType}
+               intLiteral
+       loop
+         declStmt
+           vardecl  {name: i}  {type: builtinType}
+             intLiteral
+         exprStmt
+           binaryOp  {kind: lt}
+             varref  {name: i}  {type: builtinType}
+             intLiteral
+         exprStmt
+           unaryOp  {kind: post_inc}
+             varref  {name: i}  {type: builtinType}
+         body
+           exprStmt
+             binaryOp  {kind: assign}
+               arrayAccess
+                 varref  {name: B}  {type: adjustedType}
+                 varref  {name: i}  {type: builtinType}
+               intLiteral
+       loop
+         declStmt
+           vardecl  {name: i}  {type: builtinType}
+             intLiteral
+         exprStmt
+           binaryOp  {kind: lt}
+             varref  {name: i}  {type: builtinType}
+             intLiteral
+         exprStmt
+           unaryOp  {kind: post_inc}
+             varref  {name: i}  {type: builtinType}
+         body
+           exprStmt
+             binaryOp  {kind: assign}
+               arrayAccess
+                 varref  {name: C}  {type: adjustedType}
+                 varref  {name: i}  {type: builtinType}
+               intLiteral
+       loop
+         declStmt
+           vardecl  {name: i}  {type: builtinType}
+             intLiteral
+         exprStmt
+           binaryOp  {kind: lt}
+             varref  {name: i}  {type: builtinType}
+             intLiteral
+         exprStmt
+           unaryOp  {kind: post_inc}
+             varref  {name: i}  {type: builtinType}
+         body
+           loop
+             declStmt
+               vardecl  {name: j}  {type: builtinType}
+                 intLiteral
+             exprStmt
+               binaryOp  {kind: lt}
+                 varref  {name: j}  {type: builtinType}
+                 intLiteral
+             exprStmt
+               unaryOp  {kind: post_inc}
+                 varref  {name: j}  {type: builtinType}
+             body
+               loop
+                 declStmt
+                   vardecl  {name: k}  {type: builtinType}
+                     intLiteral
+                 exprStmt
+                   binaryOp  {kind: lt}
+                     varref  {name: k}  {type: builtinType}
+                     intLiteral
+                 exprStmt
+                   unaryOp  {kind: post_inc}
+                     varref  {name: k}  {type: builtinType}
+                 body
+                   exprStmt
+                     binaryOp  {kind: assign}
+                       arrayAccess
+                         varref  {name: C}  {type: adjustedType}
+                         varref  {name: k}  {type: builtinType}
+                       binaryOp  {kind: add}
+                         arrayAccess
+                           varref  {name: A}  {type: adjustedType}
+                           varref  {name: i}  {type: builtinType}
+                         arrayAccess
+                           varref  {name: B}  {type: adjustedType}
+                           varref  {name: j}  {type: builtinType}
+       loop
+         declStmt
+           vardecl  {name: i}  {type: builtinType}
+             intLiteral
+         exprStmt
+           binaryOp  {kind: lt}
+             varref  {name: i}  {type: builtinType}
+             intLiteral
+         exprStmt
+           binaryOp  {kind: add_assign}
+             varref  {name: i}  {type: builtinType}
+             intLiteral
+         body
+           exprStmt
+             binaryOp  {kind: assign}
+               arrayAccess
+                 varref  {name: A}  {type: adjustedType}
+                 varref  {name: i}  {type: builtinType}
+               intLiteral
+       loop
+         declStmt
+           vardecl  {name: i}  {type: builtinType}
+             intLiteral
+         exprStmt
+           binaryOp  {kind: lt}
+             varref  {name: i}  {type: builtinType}
+             intLiteral
+         exprStmt
+           binaryOp  {kind: assign}
+             varref  {name: i}  {type: builtinType}
+             binaryOp  {kind: add}
+               varref  {name: i}  {type: builtinType}
+               intLiteral
+         body
+           exprStmt
+             binaryOp  {kind: assign}
+               arrayAccess
+                 varref  {name: A}  {type: adjustedType}
+                 varref  {name: i}  {type: builtinType}
+               intLiteral
+       loop
+         exprStmt
+           binaryOp  {kind: assign}
+             varref  {name: idx}  {type: builtinType}
+             intLiteral
+         exprStmt
+           binaryOp  {kind: lt}
+             varref  {name: idx}  {type: builtinType}
+             intLiteral
+         exprStmt
+           unaryOp  {kind: post_inc}
+             varref  {name: idx}  {type: builtinType}
+         body
+           exprStmt
+             binaryOp  {kind: assign}
+               arrayAccess
+                 varref  {name: A}  {type: adjustedType}
+                 varref  {name: idx}  {type: builtinType}
+               intLiteral
+       loop
+         exprStmt
+           binaryOp  {kind: lt}
+             varref  {name: idx2}  {type: builtinType}
+             intLiteral
+         exprStmt
+           unaryOp  {kind: post_inc}
+             varref  {name: idx2}  {type: builtinType}
+         body
+           exprStmt
+             binaryOp  {kind: assign}
+               arrayAccess
+                 varref  {name: A}  {type: adjustedType}
+                 varref  {name: idx2}  {type: builtinType}
+               intLiteral
+   function  {sig: main()}
+     body
+       declStmt
+         vardecl  {name: A}  {type: arrayType}
+       declStmt
+         vardecl  {name: B}  {type: arrayType}
+       declStmt
+         vardecl  {name: C}  {type: arrayType}
+       exprStmt
+         call  {fun: foo}
+           varref  {name: foo}  {type: functionType}
+           varref  {name: A}  {type: arrayType}
+           varref  {name: B}  {type: arrayType}
+           varref  {name: C}  {type: arrayType}
+       returnStmt
+         intLiteral
