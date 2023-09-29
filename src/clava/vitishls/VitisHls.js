@@ -57,7 +57,7 @@ class VitisHls {
         return this;
     }
 
-    addSourcesInFolder(folder) {
+    addSourcesInFolder(folder, recursive = false) {
         println(folder);
 
         let cnt = 0;
@@ -70,10 +70,15 @@ class VitisHls {
                 this.filesToCopy.push(folder + "/" + file.name);
             }
         }
-
-
         this.log(`Added ${cnt} file(s) from folder ${folder}`);
-        return this;
+
+        if (recursive) {
+            for (const subfolder of Io.getFolders(folder)) {
+                this.addSourcesInFolder(folder + "/" + subfolder.name, recursive);
+            }
+        }
+
+
     }
 
     synthesize(verbose = true) {
