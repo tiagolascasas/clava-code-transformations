@@ -58,8 +58,6 @@ class VitisHls {
     }
 
     addSourcesInFolder(folder, recursive = false) {
-        println(folder);
-
         let cnt = 0;
         for (const file of Io.getFiles(folder)) {
             const exts = [".c", ".cpp", ".h", ".hpp"];
@@ -82,7 +80,6 @@ class VitisHls {
     }
 
     synthesize(verbose = true) {
-
         this.log("Setting up Vitis HLS executor");
         this.clean();
 
@@ -98,15 +95,35 @@ class VitisHls {
         this.generateTclFile();
         this.executeVitis(verbose);
 
-        return Io.isFile(this.getSynthesisReportPath());
+        if (this.getSynthesisReportPath() == null) {
+            this.log("No synthesis report found, synthesis may have been unsuccessful! Aborting...");
+            return false;
+        }
+        return true;
     }
 
     clean() {
-        Io.deleteFolderContents(this.vitisDir);
+        if (!Io.isFolder(this.vitisDir)) {
+            Io.mkdir(this.vitisDir);
+        }
+        else {
+            Io.deleteFolderContents(this.vitisDir);
+        }
     }
 
     getSynthesisReportPath() {
-        return this.vitisDir + "/" + this.vitisProjName + "/solution1/syn/report/csynth.xml";
+        const basePath = this.vitisDir + "/" + this.vitisProjName + "/solution1/syn/report/";
+        const possiblePaths = [
+            basePath + "csynth.xml",
+            basePath + this.topFunction + "_csynth.xml"
+        ];
+
+        for (const path of possiblePaths) {
+            if (Io.isFile(path)) {
+                return path;
+            }
+        }
+        return null;
     }
 
     executeVitis(verbose) {
@@ -147,10 +164,19 @@ exit
 
     getSynthesisReport() {
         this.log("Processing synthesis report");
-        const parser = new VitisHlsReportParser(this.getSynthesisReportPath());
+
+        const path = this.getSynthesisReportPath();
+        if (path == null) {
+            this.log("No synthesis report found, synthesis either failed or has not been run yet! Aborting...");
+            return {};
+        }
+
+        const parser = new VitisHlsReportParser(path);
         const json = parser.getSanitizedJSON();
+
         this.log("Finished processing synthesis report");
         return json;
+
     }
 
     preciseStr(n, decimalPlaces) {

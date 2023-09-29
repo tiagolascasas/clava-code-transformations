@@ -25,7 +25,8 @@ class VitisHlsReportParser {
         const execTimeAvg = this.calculateExecutionTime(raw["Average-caseLatency"], fmax);
         const execTimeBest = this.calculateExecutionTime(raw["Best-caseLatency"], fmax);
         const hasFixedLatency = raw["Best-caseLatency"] === raw["Worst-caseLatency"];
-        return {
+
+        const sanitized = {
             platform: raw["Part"],
             topFun: raw["TopModelName"],
             clockTarget: raw["TargetClockPeriod"],
@@ -51,6 +52,13 @@ class VitisHlsReportParser {
             perBRAM: raw["BRAM_18K"] / raw["AVAIL_BRAM"],
             perDSP: raw["DSP"] / raw["AVAIL_DSP"],
         };
+
+        for (const key in sanitized) {
+            if (sanitized[key] == null) {
+                sanitized[key] = -1;
+            }
+        }
+        return sanitized;
     }
 
     getRawJSON() {
