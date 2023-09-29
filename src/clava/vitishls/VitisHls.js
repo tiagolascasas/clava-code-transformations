@@ -10,10 +10,10 @@ class VitisHls {
     vitisDir = "VitisHLS";
     vitisProjName = "VitisHLSClavaProject";
     sourceFiles = [];
+    filesToCopy = [];
     flowTarget = "vivado";
 
     constructor(topFunction, clock = 10, platform = "xcvu5p-flva2104-1-e") {
-        println("We are in the very special new vitis");
         this.topFunction = topFunction;
         this.platform = platform;
         this.setClock(clock);
@@ -57,17 +57,42 @@ class VitisHls {
         return this;
     }
 
-    getTimestamp() {
-        const curr = new Date();
-        const res = `[${this.toolName} ${curr.getHours()}:${curr.getMinutes()}:${curr.getSeconds()}]`;
-        return res;
+    addSourcesInFolder(folder) {
+        println(folder);
+
+        let cnt = 0;
+        for (const file of Io.getFiles(folder)) {
+            const exts = [".c", ".cpp", ".h", ".hpp"];
+            const isValid = exts.some((ext) => file.name.includes(ext));
+            if (isValid) {
+                cnt++;
+                this.sourceFiles.push(file.name);
+                this.filesToCopy.push(folder + "/" + file.name);
+            }
+        }
+
+
+        this.log(`Added ${cnt} file(s) from folder ${folder}`);
+        return this;
     }
 
     synthesize(verbose = true) {
-        console.log(`${this.getTimestamp()} Setting up Vitis HLS executor`);
+
+        this.log("Setting up Vitis HLS executor");
         this.clean();
+
+        if (this.sourceFiles.length == 0) {
+            this.log("No files were provided to Vitis HLS! Aborting...");
+            return false;
+        }
+
+        for (const file of this.filesToCopy) {
+            Io.copyFile(file, this.vitisDir);
+        }
+
         this.generateTclFile();
         this.executeVitis(verbose);
+
         return Io.isFile(this.getSynthesisReportPath());
     }
 
@@ -80,16 +105,25 @@ class VitisHls {
     }
 
     executeVitis(verbose) {
-        console.log(`${this.getTimestamp()} Executing Vitis HLS`);
+        this.log("Executing Vitis HLS");
+        this.log("-".repeat(50));
+
         const pe = new ProcessExecutor();
         pe.setWorkingDir(this.vitisDir);
         pe.setPrintToConsole(verbose);
         pe.execute("vitis_hls", "-f", "script.tcl");
-        console.log(`${this.getTimestamp()} Finished executing Vitis HLS`);
+
+        this.log("-".repeat(50));
+        this.log("Finished executing Vitis HLS");
     }
 
     getTclInputFiles() {
-        return "";
+        let tclCommands = "";
+
+        for (const file of this.sourceFiles) {
+            tclCommands += `add_files ${file}\n`;
+        }
+        return tclCommands;
     }
 
     generateTclFile() {
@@ -107,10 +141,10 @@ exit
     }
 
     getSynthesisReport() {
-        console.log(`${this.getTimestamp()} Processing synthesis report`);
+        this.log("Processing synthesis report");
         const parser = new VitisHlsReportParser(this.getSynthesisReportPath());
         const json = parser.getSanitizedJSON();
-        console.log(`${this.getTimestamp()} Finished processing synthesis report`);
+        this.log("Finished processing synthesis report");
         return json;
     }
 
@@ -146,5 +180,15 @@ BRAM: ${report["BRAM"]} (${this.preciseStr(report["perBRAM"] * 100, 2)}%)
 DSP:  ${report["DSP"]} (${this.preciseStr(report["perDSP"] * 100, 2)}%)
 ----------------------------------------`;
         console.log(out);
+    }
+
+    getTimestamp() {
+        const curr = new Date();
+        const res = `[VITIS_HLS_EXTENSION ${curr.getHours()}:${curr.getMinutes()}:${curr.getSeconds()}]`;
+        return res;
+    }
+
+    log(message) {
+        println(`${this.getTimestamp()} ${message}`);
     }
 }
