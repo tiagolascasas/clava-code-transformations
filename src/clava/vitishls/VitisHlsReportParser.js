@@ -29,28 +29,34 @@ class VitisHlsReportParser {
         const sanitized = {
             platform: raw["Part"],
             topFun: raw["TopModelName"],
-            clockTarget: raw["TargetClockPeriod"],
-            clockEstim: raw["EstimatedClockPeriod"],
-            fmax: fmax,
-            latencyWorst: raw["Worst-caseLatency"],
-            latencyAvg: raw["Average-caseLatency"],
-            latencyBest: raw["Best-caseLatency"],
+
+            clockTarget: parseFloat(raw["TargetClockPeriod"]),
+            clockEstim: parseFloat(raw["EstimatedClockPeriod"]),
+            fmax: parseFloat(fmax),
+
+            latencyWorst: parseInt(raw["Worst-caseLatency"]),
+            latencyAvg: parseInt(raw["Average-caseLatency"]),
+            latencyBest: parseInt(raw["Best-caseLatency"]),
             hasFixedLatency: hasFixedLatency,
-            execTimeWorst: execTimeWorst,
-            execTimeAvg: execTimeAvg,
-            execTimeBest: execTimeBest,
-            FF: raw["FF"],
-            LUT: raw["LUT"],
-            BRAM: raw["BRAM_18K"],
-            DSP: raw["DSP"],
-            availFF: raw["AVAIL_FF"],
-            availLUT: raw["AVAIL_LUT"],
-            availBRAM: raw["AVAIL_BRAM"],
-            availDSP: raw["AVAIL_DSP"],
-            perFF: raw["FF"] / raw["AVAIL_FF"],
-            perLUT: raw["LUT"] / raw["AVAIL_LUT"],
-            perBRAM: raw["BRAM_18K"] / raw["AVAIL_BRAM"],
-            perDSP: raw["DSP"] / raw["AVAIL_DSP"],
+
+            execTimeWorst: parseFloat(execTimeWorst),
+            execTimeAvg: parseFloat(execTimeAvg),
+            execTimeBest: parseFloat(execTimeBest),
+
+            FF: parseInt(raw["FF"]),
+            LUT: parseInt(raw["LUT"]),
+            BRAM: parseInt(raw["BRAM_18K"]),
+            DSP: parseInt(raw["DSP"]),
+
+            availFF: parseInt(raw["AVAIL_FF"]),
+            availLUT: parseInt(raw["AVAIL_LUT"]),
+            availBRAM: parseInt(raw["AVAIL_BRAM"]),
+            availDSP: parseInt(raw["AVAIL_DSP"]),
+
+            perFF: parseFloat(raw["FF"] / raw["AVAIL_FF"]),
+            perLUT: parseFloat(raw["LUT"] / raw["AVAIL_LUT"]),
+            perBRAM: parseFloat(raw["BRAM_18K"] / raw["AVAIL_BRAM"]),
+            perDSP: parseFloat(raw["DSP"] / raw["AVAIL_DSP"]),
         };
 
         for (const key in sanitized) {
