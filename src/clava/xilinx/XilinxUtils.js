@@ -1,6 +1,6 @@
 "use strict";
 
-class VitisHlsUtils {
+class XilinxUtils {
     static activateAllDirectives(turnOn) {
         const pragmas = Query.search("wrapperStmt", {
             code: (code) => code.includes("#pragma HLS") || code.includes("#pragma hls"),

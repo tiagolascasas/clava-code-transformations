@@ -1,19 +1,20 @@
 "use strict";
 
 laraImport("lara.util.ProcessExecutor");
-laraImport("clava.vitishls.VitisHlsReportParser");
+laraImport("clava.xilinx.XilinxApp");
+laraImport("clava.xilinx.VitisHlsReportParser");
 
-class VitisHls {
+class VitisHls extends XilinxApp {
     topFunction;
     platform;
     clock;
-    vitisDir = "VitisHLS";
-    vitisProjName = "VitisHLSClavaProject";
+    vitisProjName = "vitis_hls_autogen_proj";
     sourceFiles = [];
     filesToCopy = [];
     flowTarget = "vivado";
 
     constructor(topFunction, clock = 10, platform = "xcvu5p-flva2104-1-e") {
+        super("VITIS-HLS");
         this.topFunction = topFunction;
         this.platform = platform;
         this.setClock(clock);
@@ -44,10 +45,6 @@ class VitisHls {
         return this;
     }
 
-    setOutputDirectory(dir) {
-        this.vitisDir = dir;
-    }
-
     setProjectName(name) {
         this.vitisProjName = name;
     }
@@ -75,8 +72,6 @@ class VitisHls {
                 this.addSourcesInFolder(folder + "/" + subfolder.name, recursive);
             }
         }
-
-
     }
 
     synthesize(verbose = true) {
@@ -89,7 +84,7 @@ class VitisHls {
         }
 
         for (const file of this.filesToCopy) {
-            Io.copyFile(file, this.vitisDir);
+            Io.copyFile(file, this.getWorkingDir());
         }
 
         this.generateTclFile();
@@ -102,17 +97,8 @@ class VitisHls {
         return true;
     }
 
-    clean() {
-        if (!Io.isFolder(this.vitisDir)) {
-            Io.mkdir(this.vitisDir);
-        }
-        else {
-            Io.deleteFolderContents(this.vitisDir);
-        }
-    }
-
     getSynthesisReportPath() {
-        const basePath = this.vitisDir + "/" + this.vitisProjName + "/solution1/syn/report/";
+        const basePath = this.getWorkingDir() + "/" + this.vitisProjName + "/solution1/syn/report/";
         const possiblePaths = [
             basePath + "csynth.xml",
             basePath + this.topFunction + "_csynth.xml"
@@ -131,7 +117,7 @@ class VitisHls {
         this.log("-".repeat(50));
 
         const pe = new ProcessExecutor();
-        pe.setWorkingDir(this.vitisDir);
+        pe.setWorkingDir(this.getWorkingDir());
         pe.setPrintToConsole(verbose);
         pe.execute("vitis_hls", "-f", "script.tcl");
 
@@ -159,7 +145,7 @@ create_clock -period ${this.clock} -name default
 csynth_design
 exit
     `;
-        Io.writeFile(this.vitisDir + "/script.tcl", cmd);
+        Io.writeFile(this.getWorkingDir() + "/script.tcl", cmd);
     }
 
     getSynthesisReport() {
@@ -179,9 +165,7 @@ exit
 
     }
 
-    preciseStr(n, decimalPlaces) {
-        return (+n).toFixed(decimalPlaces);
-    }
+
 
     prettyPrintReport(report) {
         const period = this.preciseStr(report["clockEstim"], 2);
@@ -211,15 +195,5 @@ BRAM: ${report["BRAM"]} (${this.preciseStr(report["perBRAM"] * 100, 2)}%)
 DSP:  ${report["DSP"]} (${this.preciseStr(report["perDSP"] * 100, 2)}%)
 ----------------------------------------`;
         console.log(out);
-    }
-
-    getTimestamp() {
-        const curr = new Date();
-        const res = `[VITIS_HLS_EXTENSION ${curr.getHours()}:${curr.getMinutes()}:${curr.getSeconds()}]`;
-        return res;
-    }
-
-    log(message) {
-        println(`${this.getTimestamp()} ${message}`);
     }
 }
