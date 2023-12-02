@@ -127,11 +127,43 @@ class Outliner {
         }
 
         //------------------------------------------------------------------------------
+        // Remove some of the redundancies introduced by the outlining process
+        this.#removeRedundancies(fun);
+        this.#removeRedundancies(call);
+
+        //------------------------------------------------------------------------------
+        // Victory, at last
         begin.detach();
         end.detach();
         this.#printMsg("Outliner cleanup finished");
 
         return [fun, call];
+    }
+
+    #removeRedundancies(startingPoint) {
+        const unaryOps = [];
+
+        for (const unaryOp of Query.searchFrom(startingPoint, "unaryOp")) {
+            unaryOps.push(unaryOp);
+        }
+
+        for (const op of unaryOps) {
+            if (op.children.length == 0) {
+                continue;
+            }
+            const child = op.children[0];
+
+            if (child.instanceOf("parenExpr")) {
+                const grandchild = child.children[0];
+
+                const isValid = op.kind == "addr_of" && grandchild.instanceOf("unaryOp") && grandchild.kind == "deref";
+                if (isValid) {
+                    op.replaceWith(grandchild.children[0]);
+                }
+            }
+        }
+
+
     }
 
     /**
@@ -184,7 +216,7 @@ class Outliner {
         const returnStmts = this.#findNonvoidReturnStmts([fun]);
 
         if (returnStmts.length == 0) {
-            return false;
+            return null;
         }
 
         // actions before the function call
@@ -208,7 +240,7 @@ class Outliner {
 
         for (const ret of returnStmts) {
             const resVarParam = fun.params[fun.params.length - 2];
-            const derefResVarParam = ClavaJoinPoints.unaryOp("*", resVarParam.varref());
+            const derefResVarParam = ClavaJoinPoints.parenthesis(ClavaJoinPoints.unaryOp("*", resVarParam.varref()));
             const retVal = ret.children[0];
             retVal.detach();
             const op1 = ClavaJoinPoints.binaryOp("=", derefResVarParam, retVal, resVarParam.type);
@@ -216,7 +248,7 @@ class Outliner {
 
             const boolVarParam = fun.params[fun.params.length - 1];
             const newVarref = ClavaJoinPoints.varRef(boolVarParam);
-            const derefBoolVarParam = ClavaJoinPoints.unaryOp("*", newVarref);
+            const derefBoolVarParam = ClavaJoinPoints.parenthesis(ClavaJoinPoints.unaryOp("*", newVarref));
             const trueVal = ClavaJoinPoints.integerLiteral(1);
             const op2 = ClavaJoinPoints.binaryOp("=", derefBoolVarParam, trueVal, boolVarParam.type);
             ret.insertBefore(op2);
@@ -366,7 +398,7 @@ class Outliner {
                                 varref.replaceWith(newVarref);
                             }
                             else {
-                                const op = ClavaJoinPoints.unaryOp("*", newVarref);
+                                const op = ClavaJoinPoints.parenthesis(ClavaJoinPoints.unaryOp("*", newVarref));
                                 varref.replaceWith(op);
                             }
 
