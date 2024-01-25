@@ -1,6 +1,6 @@
 # clava-code-transformations
 
-Code transformations and optimizations for the Clava C/C++ to C/C++ Source-to-Source compiler:
+Code transformations and optimizations for the [Clava C/C++ to C/C++ Source-to-Source compiler](https://github.com/specs-feup/clava):
 
 **ArrayFlattener** - converts N-dimensional arrays into 1D.
 
@@ -16,8 +16,12 @@ Code transformations and optimizations for the Clava C/C++ to C/C++ Source-to-So
 
 **Voidifier** - takes in a function with a return value, and changes it so that the function returns void. It does this by adding in an additional pointer argument to the function, pointing to a new local variable where the result of the function can be stored. It then uses that variable in lieu of the return value of the function.
 
-### How do I include these in Clava?
+### How do I use these in Clava?
 
 1. Clone the repository
-2. Add the repository as an extra include to your Clava config file or command-line arguments, e.g., `--includes /path/to/repo/clava-code-transformations/src`. Make sure you include the "src" folder, and not the root of the repository!
-3. Use the transformations in your own code by importing them using `laraImport("clava.code.<TRANSFORM>");`, e.g., import `laraImport("clava.code.Outliner");` to import and use the Outliner.
+2. Add the repository as an extra include either on your Clava config file, or as a command-line argument, e.g., `--includes /path/to/repo/clava-code-transformations/src`. Make sure you include the "src" folder, and not the root of the repository!
+3. Use the transformations in your own code by importing them using `laraImport("clava.code.<TRANSFORM>");`, e.g., use `laraImport("clava.code.Outliner");` to import and use the Outliner.
+
+### How do I test these transformations?
+
+Each transformation has an associated test (runnable by a script) with its own input source files.
