@@ -1,47 +1,54 @@
 "use strict";
 
-class TripCountCalculator {
-    static calculate(loop) {
+class LoopCharacterizer {
+    static characterize(loop) {
         if (!loop.instanceOf("loop")) {
-            println("[TripCountCalculator] ERROR: argument is not a loop");
-            return TripCountCalculator.#getCharacterizationTemplate();
+            println("[LoopCharacterizer] ERROR: argument is not a loop");
+            return LoopCharacterizer
+                .#getCharacterizationTemplate();
         }
 
         if (loop.kind == "for") {
-            return TripCountCalculator.#handleForLoop(loop);
+            return LoopCharacterizer
+                .#handleForLoop(loop);
         }
         if (loop.kind == "while" || loop.kind == "dowhile") {
-            return TripCountCalculator.#handleWhileLoop(loop);
+            return LoopCharacterizer
+                .#handleWhileLoop(loop);
         }
-        return TripCountCalculator.#getCharacterizationTemplate();
+        return LoopCharacterizer
+            .#getCharacterizationTemplate();
     }
 
     static #handleForLoop(loop) {
         if (loop.numChildren != 4) {
-            println("[TripCountCalculator] ERROR: for-loop is non-canonical (i.e., does not have 3 statements in its header)");
-            return TripCountCalculator.#getCharacterizationTemplate();
+            println("[LoopCharacterizer] ERROR: for-loop is non-canonical");
+            return LoopCharacterizer
+                .#getCharacterizationTemplate();
         }
         const initExpr = loop.children[0];
         const conditionExpr = loop.children[1];
         const incrementExpr = loop.children[2];
         const body = loop.children[3];
 
-        const initData = TripCountCalculator.#getInitializationData(initExpr);
+        const initData = LoopCharacterizer
+            .#getInitializationData(initExpr);
         const initialVal = initData[0];
         const inductionVar = initData[1];
 
-        const condData = TripCountCalculator.#getConditionData(conditionExpr);
+        const condData = LoopCharacterizer
+            .#getConditionData(conditionExpr);
         const bound = condData[0];
         const boundVar = condData[1];
 
-        const incData = TripCountCalculator.#getIncrementData(incrementExpr);
+        const incData = LoopCharacterizer
+            .#getIncrementData(incrementExpr);
         const increment = incData[0];
         const incrementVar = incData[1];
         const op = incData[2];
 
-        println(`${inductionVar}|${boundVar}|${incrementVar} : ${initialVal}|${bound}|${increment}|${op}`);
-
-        const characterization = TripCountCalculator.#getCharacterizationTemplate();
+        const characterization = LoopCharacterizer
+            .#getCharacterizationTemplate();
         characterization.isValid = true;
         characterization.inductionVar = inductionVar;
         characterization.boundVar = boundVar;
@@ -52,7 +59,8 @@ class TripCountCalculator {
         characterization.op = op;
 
         if ((inductionVar == boundVar) || (boundVar == incrementVar)) {
-            const tripCount = TripCountCalculator.#calculateTripCount(initialVal, bound, increment, op);
+            const tripCount = LoopCharacterizer
+                .#calculateTripCount(initialVal, bound, increment, op);
             characterization.tripCount = tripCount;
         }
         return characterization;
@@ -92,7 +100,8 @@ class TripCountCalculator {
             if (increment == 1 || increment == 0) {
                 return -1;
             }
-            return Math.floor(TripCountCalculator.logBase(increment, iterationSpace));
+            return Math.floor(LoopCharacterizer
+                .logBase(increment, iterationSpace));
         }
         return -1;
     }
@@ -179,10 +188,12 @@ class TripCountCalculator {
 
     static #getIncrementData(incExpr) {
         if (incExpr.numChildren == 1 && incExpr.children[0].instanceOf("unaryOp")) {
-            return TripCountCalculator.#handleUnaryIncrement(incExpr);
+            return LoopCharacterizer
+                .#handleUnaryIncrement(incExpr);
         }
         if (incExpr.numChildren == 1 && incExpr.children[0].instanceOf("binaryOp")) {
-            return TripCountCalculator.#handleBinaryIncrement(incExpr);
+            return LoopCharacterizer
+                .#handleBinaryIncrement(incExpr);
         }
     }
 
@@ -263,7 +274,7 @@ class TripCountCalculator {
     }
 
     static #handleWhileLoop(loop) {
-        println("[TripCountCalculator] ERROR: while and do-while statements are not yet supported");
+        println("[LoopCharacterizer] ERROR: while and do-while loops are not yet supported");
         return -1;
     }
 }
