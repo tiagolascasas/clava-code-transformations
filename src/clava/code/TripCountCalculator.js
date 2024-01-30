@@ -4,7 +4,7 @@ class TripCountCalculator {
     static calculate(loop) {
         if (!loop.instanceOf("loop")) {
             println("[TripCountCalculator] ERROR: argument is not a loop");
-            return -1;
+            return TripCountCalculator.#getCharacterizationTemplate();
         }
 
         if (loop.kind == "for") {
@@ -13,13 +13,13 @@ class TripCountCalculator {
         if (loop.kind == "while" || loop.kind == "dowhile") {
             return TripCountCalculator.#handleWhileLoop(loop);
         }
-        return -1;
+        return TripCountCalculator.#getCharacterizationTemplate();
     }
 
     static #handleForLoop(loop) {
         if (loop.numChildren != 4) {
             println("[TripCountCalculator] ERROR: for-loop is non-canonical (i.e., does not have 3 statements in its header)");
-            return -1;
+            return TripCountCalculator.#getCharacterizationTemplate();
         }
         const initExpr = loop.children[0];
         const conditionExpr = loop.children[1];
@@ -41,13 +41,35 @@ class TripCountCalculator {
 
         println(`${inductionVar}|${boundVar}|${incrementVar} : ${initialVal}|${bound}|${increment}|${op}`);
 
-        if ((inductionVar != boundVar) && (boundVar != incrementVar)) {
-            // on a canonical loop, the same ind var needs to be used for all 3 statements
-            return -1;
-        }
-        const tripCount = TripCountCalculator.#calculateTripCount(initialVal, bound, increment, op);
+        const characterization = TripCountCalculator.#getCharacterizationTemplate();
+        characterization.isValid = true;
+        characterization.inductionVar = inductionVar;
+        characterization.boundVar = boundVar;
+        characterization.incrementVar = incrementVar;
+        characterization.initialVal = initialVal;
+        characterization.bound = bound;
+        characterization.increment = increment;
+        characterization.op = op;
 
-        return tripCount;
+        if ((inductionVar == boundVar) || (boundVar == incrementVar)) {
+            const tripCount = TripCountCalculator.#calculateTripCount(initialVal, bound, increment, op);
+            characterization.tripCount = tripCount;
+        }
+        return characterization;
+    }
+
+    static #getCharacterizationTemplate() {
+        return {
+            isValid: false,
+            inductionVar: "nil",
+            boundVar: "nil",
+            incrementVar: "nil",
+            initialVal: -1,
+            bound: -1,
+            increment: -1,
+            op: "nop",
+            tripCount: -1
+        }
     }
 
     static #calculateTripCount(initialVal, bound, increment, op) {

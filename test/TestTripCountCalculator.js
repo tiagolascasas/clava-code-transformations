@@ -7,8 +7,8 @@ function main() {
 
     const counts = {};
     for (const loop of Query.search("loop")) {
-        const count = TripCountCalculator.calculate(loop);
-        counts[loop.line] = count;
+        const characterization = TripCountCalculator.calculate(loop);
+        counts[loop.line] = characterization.tripCount;
     }
 
     println("-----------------------------------\nTrip counts:");
