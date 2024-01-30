@@ -102,7 +102,12 @@ class TripCountCalculator {
     }
 
     static #getInitializationData(initExpr) {
-        if (initExpr.numChildren != 0 && initExpr.children[0].instanceOf("vardecl")) {
+        if (initExpr.numChildren == 0) {
+            return [-1, "nil"];
+        }
+
+        // case: int i = 0
+        if (initExpr.children[0].instanceOf("vardecl")) {
             const varDecl = initExpr.children[0];
             const name = varDecl.name;
 
@@ -114,7 +119,20 @@ class TripCountCalculator {
                 return [-1, name];
             }
         }
-        return [-1, "nil"];
+        // case: i = 0
+        if (initExpr.children[0].instanceOf("binaryOp") && initExpr.children[0].kind == "assign") {
+            const binaryOp = initExpr.children[0];
+            const lhs = binaryOp.children[0];
+            const rhs = binaryOp.children[1];
+
+            if (lhs.instanceOf("varref") && rhs.instanceOf("intLiteral")) {
+                const initVal = rhs.value;
+                const name = lhs.name;
+                return [initVal, name];
+            }
+            else
+                return [-1, "nil"];
+        }
     }
 
     static #getConditionData(condExpr) {
