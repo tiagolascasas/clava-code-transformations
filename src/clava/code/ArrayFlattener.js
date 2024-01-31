@@ -6,7 +6,15 @@ laraImport("lara.util.IdGenerator");
 class ArrayFlattener {
     constructor() { }
 
-    flattenAll() {
+    flattenAllInFunction(fun) {
+
+    }
+
+    flattenParameterArray(fun, arrayParam) {
+
+    }
+
+    flattenLocalArray(fun, arrayVar) {
 
     }
 }
