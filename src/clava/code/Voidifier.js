@@ -11,6 +11,10 @@ class Voidifier {
         if (returnStmts.length == 0) {
             return false;
         }
+        if (this.#functionIsOperator(fun)) {
+            return false;
+        }
+
         const retVarType = fun.returnType;
 
         this.#voidifyFunction(fun, returnStmts, returnVarName, retVarType);
@@ -19,6 +23,15 @@ class Voidifier {
             this.#handleCall(call, fun, retVarType);
         }
         return true;
+    }
+
+    #functionIsOperator(fun) {
+        // Honestly I have no idea how to do this using the current AST
+        // So we can use a regex, since they always follow the pattern of
+        // "operator<symbol>"
+        const regex = /operator[^\w\s]+/;
+
+        return regex.test(fun.name);
     }
 
     #handleAssignmentCall(call, fun) {
@@ -46,7 +59,7 @@ class Voidifier {
     }
 
     #handleIsolatedCall(call, fun, retVarType) {
-        const tempId = IdGenerator.next("__dummy");
+        const tempId = IdGenerator.next("__vdtemp");
         const tempVar = ClavaJoinPoints.varDeclNoInit(tempId, retVarType);
 
         // for things like "while(foo(&__dummy))"
