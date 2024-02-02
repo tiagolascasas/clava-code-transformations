@@ -79,7 +79,9 @@ int main()
     int Y = X + foo(A, B, 52) + A;
     int num = 14;
 
-    int someRes = hasDefaultStuff(A, B);
+    int someRes1 = hasDefaultStuff(A, B);
+    int someRes2 = hasDefaultStuff(A, B, 555);
+    int someRes3 = hasDefaultStuff(A, B, 666, 777);
 
     bar(A, B, &X);
 

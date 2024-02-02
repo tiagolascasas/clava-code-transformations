@@ -14,6 +14,8 @@ class Voidifier {
         if (this.#functionIsOperator(fun)) {
             return false;
         }
+        this.#makeDefaultParamsExplicit(fun);
+        return;
 
         const retVarType = fun.returnType;
 
@@ -23,6 +25,55 @@ class Voidifier {
             this.#handleCall(call, fun, retVarType);
         }
         return true;
+    }
+
+    #makeDefaultParamsExplicit(fun) {
+        const initParams = [];
+        let offset = -1;
+
+        for (const param of fun.params) {
+            if (initParams.length == 0) {
+                offset++;
+            }
+
+            if (param.hasInit) {
+
+                initParams.push(param);
+            }
+        }
+        if (initParams.length == 0) {
+            return;
+        }
+
+        // Update calls with the actual values
+        for (const call of Query.search("call", { "signature": fun.signature })) {
+            const newArgs = [];
+            let i = 0;
+            let j = 0;
+
+            for (const arg of call.argList) {
+                if (i < offset) {
+                    newArgs.push(arg);
+                }
+                else {
+                    if (arg.joinPointType == "expression" && arg.children.length == 0) {
+                        newArgs.push(initParams[j].children[0]);
+                    }
+                    else {
+                        newArgs.push(arg);
+                    }
+                    j++;
+                }
+                i++;
+            }
+            const newCall = ClavaJoinPoints.call(fun, newArgs);
+            call.replaceWith(newCall);
+        }
+
+        // Remove default values from the function
+        for (const param of initParams) {
+            param.removeChildren();
+        }
     }
 
     #functionIsOperator(fun) {
@@ -97,29 +148,9 @@ class Voidifier {
         call.replaceWith(ClavaJoinPoints.varRef(tempVar));
     }
 
-    #functionHasDefaultParams(fun) {
-        let idx;
-        for (idx = 0; idx < fun.params.length; idx++) {
-            if (fun.params[idx].children.length > 0) {
-                return idx;
-            }
-        }
-        return -1;
-    }
-
-
     #buildCall(fun, oldCall, newArg) {
-        const idx = this.#functionHasDefaultParams(fun);
-        let args = [];
-
-        if (idx == -1) {
-            args = [...oldCall.argList, newArg];
-        }
-        else {
-            const firstArgs = oldCall.argList.slice(0, idx);
-            const lastArgs = oldCall.argList.slice(idx);
-            args = [...firstArgs, newArg, ...lastArgs];
-        }
+        newArg = Array.isArray(newArg) ? newArg : [newArg];
+        const args = [...oldCall.argList, ...newArg];
 
         const newCall = ClavaJoinPoints.call(fun, args);
         return newCall;
@@ -170,17 +201,7 @@ class Voidifier {
     #voidifyFunction(fun, returnStmts, returnVarName, retVarType) {
         const pointerType = ClavaJoinPoints.pointer(retVarType);
         const retParam = ClavaJoinPoints.param(returnVarName, pointerType);
-
-        const idx = this.#functionHasDefaultParams(fun);
-        if (idx == -1) {
-            fun.addParam(retParam);
-        }
-        else {
-            const firstParams = fun.params.slice(0, idx);
-            const lastParams = fun.params.slice(idx);
-            const newParams = [...firstParams, retParam, ...lastParams];
-            fun.setParams(newParams);
-        }
+        fun.addParam(retParam);
 
         for (const ret of returnStmts) {
             const derefRet = ClavaJoinPoints.unaryOp("*", retParam.varref());
