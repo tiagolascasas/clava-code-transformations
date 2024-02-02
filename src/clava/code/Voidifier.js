@@ -15,7 +15,6 @@ class Voidifier {
             return false;
         }
         this.#makeDefaultParamsExplicit(fun);
-        return;
 
         const retVarType = fun.returnType;
 
