@@ -450,15 +450,40 @@ class Outliner {
             for (const varref of Query.searchFrom(stmt, "varref")) {
                 // may need to filter for other types, like macros, etc
                 // select all varrefs with no matching decl in the region, except globals
-                if (!varrefsNames.includes(varref.name) && !varref.isFunctionCall
-                    && !declsNames.contains(varref.name) && !varref.decl.isGlobal) {
-                    varrefs.push(varref);
-                    varrefsNames.push(varref.name);
+                try {
+                    const isValid = this.#isValidVarref(varref);
+                    if (!isValid) {
+                        continue;
+                    }
+
+                    const condA = !varrefsNames.includes(varref.name);
+                    const condB = !declsNames.includes(varref.name);
+                    const condC = !varref.vardecl.isGlobal;
+
+                    if (condA && condB && condC) {
+                        varrefs.push(varref);
+                        varrefsNames.push(varref.name);
+                    }
+                } catch (e) {
+                    println(e);
+                    println(varref.code);
                 }
             }
         }
         this.#printMsg("Found " + varrefsNames.length + " external variable references inside outline region");
         return varrefs;
+    }
+
+    #isValidVarref(varref) {
+        // FIXME: EXTREMELY PATCHWORK SOLUTION UNTIL WE FIND SOMETHING BETTER
+        const code = varref.code;
+        const blacklist = [
+            "<<",
+            ">>",
+            "+",
+            "std::endl"
+        ];
+        return !blacklist.some(s => code.includes(s)) && !varref.isFunctionCall;
     }
 
     #findDeclsWithDependency(region, epilogue) {
