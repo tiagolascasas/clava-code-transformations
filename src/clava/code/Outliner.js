@@ -427,7 +427,8 @@ class Outliner {
                 params.push(param);
             }
             else {
-                this.#printMsg("Unsuported param type: " + varType.joinPointType, true);
+                this.#printMsg(`Unsupported param type "${varType.joinPointType}" for C/C++ type ${varType.code}`, true);
+                println(varType.code);
             }
         }
         this.#printMsg("Created " + params.length + " param(s) for the outlined function");
