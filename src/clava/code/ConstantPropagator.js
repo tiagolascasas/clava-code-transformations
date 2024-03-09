@@ -46,13 +46,10 @@ class ConstantPropagator {
                 const newLiteral = ClavaJoinPoints.integerLiteral(value);
                 varref.replaceWith(newLiteral);
             }
-            else if (init.instanceOf("floatLiteral")) {
+            if (init.instanceOf("floatLiteral")) {
                 const value = init.value;
                 const newLiteral = ClavaJoinPoints.doubleLiteral(value);
                 varref.replaceWith(newLiteral);
-            }
-            else {
-                println(`[ConstantPropagator] Cannot fold global "${decl.name}" of type "${type}"`);
             }
         }
     }
