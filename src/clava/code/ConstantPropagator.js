@@ -20,7 +20,7 @@ class ConstantPropagator {
     doPass() {
         // for cases where a varref refers to a global like "const int foo = 10;"
         for (const varref of Query.search("varref")) {
-            if (varref.vardecl != null) {
+            if (varref.hasOwnProperty("vardecl") && varref.vardecl != null) {
                 if (varref.vardecl.isGlobal && varref.vardecl.hasInit) {
                     this.#propagateConstantGlobal(varref);
                 }
