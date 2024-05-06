@@ -1,8 +1,14 @@
 "use strict";
 
+laraImport("clava.ClavaJoinPoints");
+
 class StructDecomposer {
 
     constructor() { }
+
+    log(msg) {
+        println(`[StructDecomp] ${msg}`);
+    }
 
     decomposeAllEligible() {
         const structs = this.findEligibleStructs();
@@ -10,6 +16,7 @@ class StructDecomposer {
         for (const structName in structs) {
             const struct = structs[structName];
             this.decompose(struct, structName);
+            this.log("------------------------------");
         }
     }
 
@@ -36,11 +43,14 @@ class StructDecomposer {
     }
 
     decompose(struct, name) {
-        println(`[StructDecomp] Decomposing struct "${name}"`);
+        this.log(`Decomposing struct "${name}"`);
 
         const decls = this.getAllDeclsOfStruct(struct, name);
-        println(`[StructDecomp] Found ${decls.length} declarations for struct "${name}"`);
+        this.log(`Found ${decls.length} declarations for struct "${name}"`);
 
+        for (const decl of decls) {
+            this.#decomposeDecl(decl, struct, name);
+        }
 
     }
 
@@ -49,16 +59,41 @@ class StructDecomposer {
 
         for (const decl of Query.search("vardecl")) {
             const type = decl.type;
-            // not sure if other types of declarations are relevant
-            if (type.kind === "ElaboratedType" || type.kind === "PointerType") {
-                const typeName = type.code.replace("*", "").replace("struct ", "").trim();
-                //println(`decl: ${decl.name}, kind: ${type.kind}, type: "${typeName}"`);
+            const typeName = type.code.replace("*", "").replace("struct ", "").trim();
 
-                if (typeName === name) {
-                    decls.push(decl);
-                }
+            if (typeName === name && !decl.isParam) {
+                //println(`decl: ${decl.name}, kind: ${type.kind}, type: "${typeName}"`);
+                decls.push(decl);
             }
         }
         return decls;
+    }
+
+    #decomposeDecl(decl, struct, name) {
+        const newVars = this.#createNewVars(decl, struct);
+
+        //...
+    }
+
+    #createNewVars(decl, struct) {
+        const newVars = {};
+        const declName = decl.name;
+
+        for (const field of struct.fields) {
+            const fieldName = field.name;
+            const newVarName = `${declName}_${fieldName}`;
+
+            let fieldType = field.type;
+            if (decl.type.kind == "PointerType") {
+                fieldType = ClavaJoinPoints.pointer(fieldType);
+            }
+
+            const newVar = ClavaJoinPoints.varDeclNoInit(newVarName, fieldType);
+            decl.insertAfter(newVar);
+
+            newVars[fieldName] = newVar;
+        }
+
+        return newVars;
     }
 }
