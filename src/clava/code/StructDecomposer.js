@@ -45,21 +45,23 @@ class StructDecomposer {
     decompose(struct, name) {
         this.log(`Decomposing struct "${name}"`);
 
-        const decls = this.getAllDeclsOfStruct(name);
+        const decls = this.#getAllDeclsOfStruct(name);
         this.log(`Found ${decls.length} declarations for struct "${name}"`);
 
-        const params = this.getAllParamsOfStruct(name);
+        const params = this.#getAllParamsOfStruct(name);
         this.log(`Found ${params.length} parameters for struct "${name}"`);
+
+        for (const param of params) {
+            this.#decomposeParam(param, struct, name);
+        }
 
         for (const decl of decls) {
             this.#decomposeDecl(decl, struct, name);
         }
-        for (const param of params) {
-            this.#decomposeParam(param, struct, name);
-        }
+
     }
 
-    getAllDeclsOfStruct(name) {
+    #getAllDeclsOfStruct(name) {
         const decls = [];
 
         for (const decl of Query.search("vardecl")) {
@@ -74,7 +76,7 @@ class StructDecomposer {
         return decls;
     }
 
-    getAllParamsOfStruct(name) {
+    #getAllParamsOfStruct(name) {
         const params = [];
 
         for (const decl of Query.search("param")) {
@@ -95,6 +97,9 @@ class StructDecomposer {
 
         // Replace all references to the struct fields with the new vars
         this.#replaceFieldRefs(decl, newVars);
+
+        // Replace all references to the struct itself in function calls
+        this.#replaceRefsInCalls(decl, newVars);
     }
 
     #decomposeParam(param, struct, name) {
@@ -106,7 +111,7 @@ class StructDecomposer {
     }
 
     #createNewVars(decl, struct) {
-        const newVars = {};
+        const newVars = [];
         const declName = decl.name;
 
         for (const field of struct.fields) {
@@ -120,14 +125,14 @@ class StructDecomposer {
 
             const newVar = ClavaJoinPoints.varDeclNoInit(newVarName, fieldType);
             decl.insertAfter(newVar);
-            newVars[fieldName] = newVar;
+            newVars.push([fieldName, newVar]);
         }
 
         return newVars;
     }
 
     #createNewParams(param, struct) {
-        const newParams = {};
+        const newParams = [];
         const paramsOrdered = [];
         const declName = param.name;
         let fun = param.parent;
@@ -145,7 +150,7 @@ class StructDecomposer {
             }
 
             const newParam = ClavaJoinPoints.param(newParamName, fieldType);
-            newParams[fieldName] = newParam;
+            newParams.push([fieldName, newParam]);
             paramsOrdered.push(newParam);
         }
 
@@ -190,7 +195,13 @@ class StructDecomposer {
             if (ref.name === declName && ref.parent.instanceOf("memberAccess")) {
                 const field = ref.parent;
                 const fieldName = field.name;
-                const newVar = newVars[fieldName];
+                let newVar = null;
+                for (const [name, varDecl] of newVars) {
+                    if (name === fieldName) {
+                        newVar = varDecl;
+                        break;
+                    }
+                }
                 const newRef = ClavaJoinPoints.varRef(newVar);
 
                 // foo.bar
@@ -217,5 +228,91 @@ class StructDecomposer {
                 }
             }
         }
+    }
+
+    #replaceRefsInCalls(decl, newVars) {
+        const declName = decl.name;
+
+        let startingPoint;
+        if (decl.isGlobal) {
+            startingPoint = decl.root;
+        }
+        else {
+            startingPoint = decl.currentRegion;
+            println(`Starting point: ${startingPoint.name}`);
+        }
+
+        const callsToReplace = [];
+        for (const call of Query.searchFrom(startingPoint, "call")) {
+            const idxToReplace = new Map();
+            for (let i = 0; i < call.args.length; i++) {
+                const arg = call.args[i];
+                let varref = null;
+                if (arg.instanceOf("varref") && arg.name === declName) {
+                    varref = arg;
+                }
+                else {
+                    for (const ref of Query.searchFrom(arg, "varref")) {
+                        if (ref.name === declName) {
+                            varref = ref;
+                            break;
+                        }
+                    }
+                }
+                if (varref) {
+                    idxToReplace.set(i, varref);
+                }
+            }
+            if (idxToReplace.size === 0) {
+                continue;
+            }
+
+            const newCall = this.#makeNewCall(call, idxToReplace, newVars, decl);
+            callsToReplace.push([call, newCall]);
+        }
+
+        for (const [oldCall, newCall] of callsToReplace) {
+            oldCall.replaceWith(newCall);
+        }
+    }
+
+
+    #makeNewCall(call, idxToReplace, newVars, decl) {
+        const finalArgList = [];
+
+        for (let i = 0; i < call.args.length; i++) {
+            if (idxToReplace.has(i)) {
+                const argToReplace = idxToReplace.get(i);
+                const newArgs = this.#makeNewArgs(argToReplace, newVars, decl);
+                finalArgList.push(...newArgs);
+            }
+            else {
+                finalArgList.push(call.args[i]);
+            }
+        }
+
+        println(call.name + " -> " + finalArgList.length);
+        const fun = call.function;
+        const newCall = ClavaJoinPoints.call(fun, finalArgList);
+        return newCall;
+    }
+
+    #makeNewArgs(arg, newVars) {
+        const newArgs = [];
+        const isAddrOf = arg.parent.instanceOf("unaryOp") && arg.parent.kind === "addr_of";
+
+        for (const [field, newFieldVar] of newVars) {
+            const newArgType = newFieldVar.type;
+            const newArg = ClavaJoinPoints.varRef(newFieldVar, newArgType);
+
+            if (isAddrOf) {
+                const addrOfNewArg = ClavaJoinPoints.unaryOp("&", newArg);
+                newArgs.push(addrOfNewArg);
+            }
+            else {
+                newArgs.push(newArg);
+            }
+        }
+        return newArgs;
     }
 }

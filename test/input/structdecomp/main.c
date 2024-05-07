@@ -82,8 +82,8 @@ int main()
     struct Point2D myPoint2D;
     myPoint2D.x = 1.0;
     myPoint2D.y = 2.0;
-    // usePoint2D(myPoint2D);
-    // usePoint2DRef(&myPoint2D);
+    usePoint2D(myPoint2D);
+    usePoint2DRef(&myPoint2D);
 
     struct Point2D *myPoint2DPtr = (struct Point2D *)malloc(sizeof(struct Point2D));
     myPoint2DPtr->x = 3.0;
