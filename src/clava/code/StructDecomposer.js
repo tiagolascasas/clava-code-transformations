@@ -1,6 +1,6 @@
 "use strict";
 
-laraImport("clava.ClavaJoinPoints");
+laraImport("clava.ClavaJoinPoints");;
 
 class StructDecomposer {
 
@@ -70,9 +70,12 @@ class StructDecomposer {
     }
 
     #decomposeDecl(decl, struct, name) {
-        const newVars = this.#createNewVars(decl, struct);
+        const toDelete = [];
 
-        //...
+        const newVars = this.#createNewVars(decl, struct);
+        toDelete.push(decl);
+
+        const fieldRefs = this.#replaceFieldRefs(decl, newVars);
     }
 
     #createNewVars(decl, struct) {
@@ -95,5 +98,45 @@ class StructDecomposer {
         }
 
         return newVars;
+    }
+
+    #replaceFieldRefs(decl, newVars) {
+        const declName = decl.name;
+
+        let startingPoint;
+        if (decl.isGlobal) {
+            startingPoint = decl.root;
+        }
+        else {
+            startingPoint = decl.currentRegion;
+        }
+
+        for (const ref of Query.searchFrom(startingPoint, "varref")) {
+            if (ref.name === declName && ref.parent.instanceOf("memberAccess")) {
+                const field = ref.parent;
+                const fieldName = field.name;
+                const newVar = newVars[fieldName];
+                const newRef = ClavaJoinPoints.varRef(newVar);
+
+                // foo.bar
+                if (!field.arrow) {
+                    field.replaceWith(newRef);
+                }
+                else {
+                    const derefRef = ClavaJoinPoints.unaryOp("*", newRef);
+
+                    // a + foo->bar
+                    if (field.parent.instanceOf("binaryOp") && field.parent.right == field) {
+                        const parenthesis = ClavaJoinPoints.parenthesis(derefRef);
+                        field.replaceWith(parenthesis);
+                    }
+                    // foo->bar
+                    else {
+                        field.replaceWith(derefRef);
+                    }
+                }
+
+            }
+        }
     }
 }

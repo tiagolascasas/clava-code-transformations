@@ -22,6 +22,8 @@ typedef struct
     char *name;  // Pointer member: char*
 } Data;
 
+Point3D globalPoint3D;
+
 void usePoint2D(struct Point2D point)
 {
     printf("Point2D: (%.2f, %.2f)\n", point.x, point.y);
@@ -44,6 +46,9 @@ void usePoint3D(Point3D point)
     int x1 = point.x + 1;
     int y1 = point.y + 1;
     int z1 = point.z + 1;
+    globalPoint3D.x = 3123.0;
+    globalPoint3D.y = 3123.0;
+    globalPoint3D.z = 3123.0;
     printf("Point3D + 1: (%d, %d, %d)\n", x1, y1, z1);
 }
 
@@ -98,6 +103,10 @@ int main()
     myPoint3DPtr->y = 5.0;
     myPoint3DPtr->z = 6.0;
     usePoint3D(*myPoint3DPtr);
+
+    globalPoint3D.x = 7.0;
+    globalPoint3D.y = 8.0;
+    globalPoint3D.z = 9.0;
 
     // Create an instance of the struct
     Data myData;
