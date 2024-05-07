@@ -88,21 +88,21 @@ int main()
     struct Point2D *myPoint2DPtr = (struct Point2D *)malloc(sizeof(struct Point2D));
     myPoint2DPtr->x = 3.0;
     myPoint2DPtr->y = 4.0;
-    // usePoint2D(*myPoint2DPtr);
-    // usePoint2DRef(myPoint2DPtr);
+    usePoint2D(*myPoint2DPtr);
+    usePoint2DRef(myPoint2DPtr);
 
     Point3D myPoint3D;
     myPoint3D.x = 1.0;
     myPoint3D.y = 2.0;
     myPoint3D.z = 3.0;
-    // usePoint3D(myPoint3D);
-    // usePoint3DRef(&myPoint3D);
+    usePoint3D(myPoint3D);
+    usePoint3DRef(&myPoint3D);
 
     Point3D *myPoint3DPtr = (Point3D *)malloc(sizeof(Point3D));
     myPoint3DPtr->x = 4.0;
     myPoint3DPtr->y = 5.0;
     myPoint3DPtr->z = 6.0;
-    // usePoint3D(*myPoint3DPtr);
+    usePoint3D(*myPoint3DPtr);
 
     globalPoint3D.x = 7.0;
     globalPoint3D.y = 8.0;
@@ -118,11 +118,25 @@ int main()
     myData.name = (char *)malloc(strlen(inputName) + 1);
     strcpy(myData.name, inputName);
 
-    // useData(myData);
-    // useDataRef(&myData);
+    useData(myData);
+    useDataRef(&myData);
 
     // Clean up and free allocated memory
     free(myData.name);
+
+    // different initializations
+    Data dataInit1 = {102, 98.9, "Sample Data 1"};
+    Data dataInit2 = {.id = 103, .value = 97.9, .name = "Sample Data 2"};
+    Data dataInit3 = {.value = 96.9, .id = 104, .name = "Sample Data 3"};
+    Data dataInit4 = {5};
+    Data dataInit5 = {.id = 105};
+    Data *dataInit6 = &(Data){106, 95.9, "Sample Data 6"};
+    Data *dataInit7 = &(Data){.id = 107, .value = 94.9, .name = "Sample Data 7"};
+    Data *dataInit8 = &(Data){.value = 93.9, .id = 108, .name = "Sample Data 8"};
+    Data *dataInit9 = &(Data){109};
+    Data *dataInit10 = &(Data){.id = 110};
+    Data *dataInit11 = (Data *)malloc(sizeof(Data));
+    *dataInit11 = (Data){111, 92.9, "Sample Data 11"};
 
     return 0;
 }

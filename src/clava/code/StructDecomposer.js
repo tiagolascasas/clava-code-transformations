@@ -59,6 +59,10 @@ class StructDecomposer {
             this.#decomposeDecl(decl, struct, name);
         }
 
+        for (const param of params) {
+            this.#removeStructParam(param);
+        }
+
     }
 
     #getAllDeclsOfStruct(name) {
@@ -158,7 +162,7 @@ class StructDecomposer {
         const preParams = [];
         const postParams = [];
         let found = false;
-        println(fun.joinPointType);
+
         for (const funParam of fun.params) {
             if (funParam.name === param.name) {
                 preParams.push(funParam);
@@ -209,21 +213,16 @@ class StructDecomposer {
                     field.replaceWith(newRef);
                 }
                 else {
-                    try {
-                        const derefRef = ClavaJoinPoints.unaryOp("*", newRef);
+                    const derefRef = ClavaJoinPoints.unaryOp("*", newRef);
 
-                        // a + foo->bar
-                        if (field.parent.instanceOf("binaryOp") && field.parent.right == field) {
-                            const parenthesis = ClavaJoinPoints.parenthesis(derefRef);
-                            field.replaceWith(parenthesis);
-                        }
-                        // foo->bar
-                        else {
-                            field.replaceWith(derefRef);
-                        }
+                    // a + foo->bar
+                    if (field.parent.instanceOf("binaryOp") && field.parent.right == field) {
+                        const parenthesis = ClavaJoinPoints.parenthesis(derefRef);
+                        field.replaceWith(parenthesis);
                     }
-                    catch (e) {
-                        println(e.stack);
+                    // foo->bar
+                    else {
+                        field.replaceWith(derefRef);
                     }
                 }
             }
@@ -239,7 +238,6 @@ class StructDecomposer {
         }
         else {
             startingPoint = decl.currentRegion;
-            println(`Starting point: ${startingPoint.name}`);
         }
 
         const callsToReplace = [];
@@ -300,6 +298,7 @@ class StructDecomposer {
     #makeNewArgs(arg, newVars) {
         const newArgs = [];
         const isAddrOf = arg.parent.instanceOf("unaryOp") && arg.parent.kind === "addr_of";
+        const isDeref = arg.parent.instanceOf("unaryOp") && arg.parent.kind === "deref";
 
         for (const [field, newFieldVar] of newVars) {
             const newArgType = newFieldVar.type;
@@ -309,10 +308,26 @@ class StructDecomposer {
                 const addrOfNewArg = ClavaJoinPoints.unaryOp("&", newArg);
                 newArgs.push(addrOfNewArg);
             }
+            else if (isDeref) {
+                const derefNewArg = ClavaJoinPoints.unaryOp("*", newArg);
+                newArgs.push(derefNewArg);
+            }
             else {
                 newArgs.push(newArg);
             }
         }
         return newArgs;
+    }
+
+    #removeStructParam(param) {
+        const fun = param.parent;
+        const newParams = [];
+
+        for (const funParam of fun.params) {
+            if (funParam.name !== param.name) {
+                newParams.push(funParam);
+            }
+        }
+        fun.setParams(newParams);
     }
 }
