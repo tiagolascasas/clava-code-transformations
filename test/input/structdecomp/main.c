@@ -77,6 +77,13 @@ void useDataRef(Data *data)
     printf("Data + 1: ID=%d, Value=%.2f\n", id1, value1);
 }
 
+void foo()
+{
+    Data d1 = {1, 2.0, "Data 1"};
+    Data d2;
+    d2 = d1;
+}
+
 int main()
 {
     struct Point2D myPoint2D;
@@ -137,6 +144,8 @@ int main()
     Data *dataInit10 = &(Data){.id = 110};
     Data *dataInit11 = (Data *)malloc(sizeof(Data));
     *dataInit11 = (Data){111, 92.9, "Sample Data 11"};
+
+    foo();
 
     return 0;
 }

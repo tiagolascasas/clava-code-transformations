@@ -9,7 +9,8 @@ function main() {
     println(dumper.dump());
 
     const decomp = new StructDecomposer();
-    decomp.decomposeAllEligible();
+    //decomp.decomposeAll();
+    decomp.decomposeByName("Point2D");
 }
 
 main();

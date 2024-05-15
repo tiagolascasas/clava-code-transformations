@@ -6,63 +6,77 @@ class StructDecomposer {
 
     constructor() { }
 
-    log(msg) {
-        println(`[StructDecomp] ${msg}`);
-    }
+    decomposeAll() {
+        const structs = {};
 
-    decomposeAllEligible() {
-        const structs = this.findEligibleStructs();
+        for (const struct of Query.search("struct")) {
+            const name = this.#getStructName(struct);
+            structs[name] = struct;
+        }
+        this.#log(`Found ${Object.keys(structs).length} eligible structs`);
 
         for (const structName in structs) {
             const struct = structs[structName];
             this.decompose(struct, structName);
-            this.log("------------------------------");
+            this.#log("------------------------------");
         }
     }
 
-    findEligibleStructs() {
-        const structs = {};
+    decomposeByName(nameOrNames) {
+        const names = Array.isArray(nameOrNames) ? nameOrNames : [nameOrNames];
+        this.#log(`Structs to decompose: ${names.join(", ")}`);
 
-        for (const struct of Query.search("struct")) {
-            let name = struct.name;
+        for (const name of names) {
+            for (const struct of Query.search("struct")) {
+                const structName = this.#getStructName(struct);
 
-            // typedef struct { ... } typedef_name;
-            if (struct.name === "") {
-                const typedef = struct.children[struct.children.length - 1].children[0];
-                name = typedef.name;
-                structs[name] = struct;
-            }
-
-            else {
-                structs[name] = struct;
+                if (structName === name) {
+                    this.decompose(struct, name);
+                    this.#log("------------------------------");
+                }
             }
         }
-        // we're selecting all structs for the moment. We'll filter them later if needed
-
-        return structs;
     }
 
     decompose(struct, name) {
-        this.log(`Decomposing struct "${name}"`);
+        this.#log(`Decomposing struct "${name}"`);
 
         const decls = this.#getAllDeclsOfStruct(name);
-        this.log(`Found ${decls.length} declarations for struct "${name}"`);
+        this.#log(`Found ${decls.length} declarations for struct "${name}"`);
 
         const params = this.#getAllParamsOfStruct(name);
-        this.log(`Found ${params.length} parameters for struct "${name}"`);
+        this.#log(`Found ${params.length} parameters for struct "${name}"`);
 
         for (const param of params) {
-            this.#decomposeParam(param, struct, name);
+            this.#decomposeParam(param, struct);
         }
 
         for (const decl of decls) {
-            this.#decomposeDecl(decl, struct, name);
+            this.#decomposeDecl(decl, struct);
         }
 
         for (const param of params) {
             this.#removeStructParam(param);
         }
 
+        for (const decl of decls) {
+            this.#removeInits(decl, struct);
+        }
+    }
+
+    #log(msg) {
+        println(`[StructDecomp] ${msg}`);
+    }
+
+    #getStructName(struct) {
+        let name = struct.name;
+
+        // typedef struct { ... } typedef_name;
+        if (struct.name === "") {
+            const typedef = struct.children[struct.children.length - 1].children[0];
+            name = typedef.name;
+        }
+        return name;
     }
 
     #getAllDeclsOfStruct(name) {
@@ -95,7 +109,7 @@ class StructDecomposer {
         return params;
     }
 
-    #decomposeDecl(decl, struct, name) {
+    #decomposeDecl(decl, struct) {
         // Find all struct decls (local and global), and create vars for each field
         const newVars = this.#createNewVars(decl, struct);
 
@@ -106,7 +120,7 @@ class StructDecomposer {
         this.#replaceRefsInCalls(decl, newVars);
     }
 
-    #decomposeParam(param, struct, name) {
+    #decomposeParam(param, struct) {
         // Find all struct params, and create params for each field
         const newParams = this.#createNewParams(param, struct);
 
@@ -329,5 +343,9 @@ class StructDecomposer {
             }
         }
         fun.setParams(newParams);
+    }
+
+    #removeInits(decl, struct) {
+
     }
 }
