@@ -9,8 +9,8 @@ function main() {
     println(dumper.dump());
 
     const decomp = new StructDecomposer();
-    //decomp.decomposeAll();
-    decomp.decomposeByName("Point2D");
+    decomp.decomposeAll();
+    //decomp.decomposeByName("Point2D");
 }
 
 main();

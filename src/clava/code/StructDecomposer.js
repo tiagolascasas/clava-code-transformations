@@ -3,8 +3,11 @@
 laraImport("clava.ClavaJoinPoints");;
 
 class StructDecomposer {
+    #silent;
 
-    constructor() { }
+    constructor(silent = false) {
+        this.#silent = silent;
+    }
 
     decomposeAll() {
         const structs = {};
@@ -15,17 +18,21 @@ class StructDecomposer {
         }
         this.#log(`Found ${Object.keys(structs).length} eligible structs`);
 
+        const decompNames = [];
         for (const structName in structs) {
             const struct = structs[structName];
             this.decompose(struct, structName);
             this.#log("------------------------------");
+            decompNames.push(structName);
         }
+        return decompNames;
     }
 
     decomposeByName(nameOrNames) {
         const names = Array.isArray(nameOrNames) ? nameOrNames : [nameOrNames];
         this.#log(`Structs to decompose: ${names.join(", ")}`);
 
+        const decompNames = [];
         for (const name of names) {
             for (const struct of Query.search("struct")) {
                 const structName = this.#getStructName(struct);
@@ -33,9 +40,11 @@ class StructDecomposer {
                 if (structName === name) {
                     this.decompose(struct, name);
                     this.#log("------------------------------");
+                    decompNames.push(name);
                 }
             }
         }
+        return decompNames;
     }
 
     decompose(struct, name) {
@@ -65,7 +74,9 @@ class StructDecomposer {
     }
 
     #log(msg) {
-        println(`[StructDecomp] ${msg}`);
+        if (!this.#silent) {
+            println(`[StructDecomp] ${msg}`);
+        }
     }
 
     #getStructName(struct) {
@@ -100,8 +111,10 @@ class StructDecomposer {
         for (const decl of Query.search("param")) {
             const type = decl.type;
             const typeName = type.code.replace("*", "").replace("struct ", "").trim();
+            const parentFun = decl.ancestor("function");
+            const hasParentFunction = parentFun != undefined && parentFun.isImplementation;
 
-            if (typeName === name && decl.isParam) {
+            if (typeName === name && decl.isParam && hasParentFunction) {
                 //println(`decl: ${decl.name}, kind: ${type.kind}, type: "${typeName}"`);
                 params.push(decl);
             }
@@ -153,10 +166,9 @@ class StructDecomposer {
         const newParams = [];
         const paramsOrdered = [];
         const declName = param.name;
-        let fun = param.parent;
-        while (!fun.instanceOf("function")) {
-            fun = fun.parent;
-        }
+
+        println(`${param.filename}:${param.line}`);
+        const fun = param.ancestor("function");
 
         for (const field of struct.fields) {
             const fieldName = field.name;
@@ -303,7 +315,7 @@ class StructDecomposer {
             }
         }
 
-        println(call.name + " -> " + finalArgList.length);
+        //println(call.name + " -> " + finalArgList.length);
         const fun = call.function;
         const newCall = ClavaJoinPoints.call(fun, finalArgList);
         return newCall;

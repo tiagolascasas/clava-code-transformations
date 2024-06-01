@@ -4,51 +4,42 @@ class LoopCharacterizer {
     static characterize(loop) {
         if (!loop.instanceOf("loop")) {
             println("[LoopCharacterizer] ERROR: argument is not a loop");
-            return LoopCharacterizer
-                .#getCharacterizationTemplate();
+            return LoopCharacterizer.#getCharacterizationTemplate();
         }
 
         if (loop.kind == "for") {
-            return LoopCharacterizer
-                .#handleForLoop(loop);
+            return LoopCharacterizer.#handleForLoop(loop);
         }
         if (loop.kind == "while" || loop.kind == "dowhile") {
-            return LoopCharacterizer
-                .#handleWhileLoop(loop);
+            return LoopCharacterizer.#handleWhileLoop(loop);
         }
-        return LoopCharacterizer
-            .#getCharacterizationTemplate();
+        return LoopCharacterizer.#getCharacterizationTemplate();
     }
 
     static #handleForLoop(loop) {
         if (loop.numChildren != 4) {
             println("[LoopCharacterizer] ERROR: for-loop is non-canonical");
-            return LoopCharacterizer
-                .#getCharacterizationTemplate();
+            return LoopCharacterizer.#getCharacterizationTemplate();
         }
         const initExpr = loop.children[0];
         const conditionExpr = loop.children[1];
         const incrementExpr = loop.children[2];
         const body = loop.children[3];
 
-        const initData = LoopCharacterizer
-            .#getInitializationData(initExpr);
+        const initData = LoopCharacterizer.#getInitializationData(initExpr);
         const initialVal = initData[0];
         const inductionVar = initData[1];
 
-        const condData = LoopCharacterizer
-            .#getConditionData(conditionExpr);
+        const condData = LoopCharacterizer.#getConditionData(conditionExpr);
         const bound = condData[0];
         const boundVar = condData[1];
 
-        const incData = LoopCharacterizer
-            .#getIncrementData(incrementExpr);
+        const incData = LoopCharacterizer.#getIncrementData(incrementExpr);
         const increment = incData[0];
         const incrementVar = incData[1];
         const op = incData[2];
 
-        const characterization = LoopCharacterizer
-            .#getCharacterizationTemplate();
+        const characterization = LoopCharacterizer.#getCharacterizationTemplate();
         characterization.isValid = true;
         characterization.inductionVar = inductionVar;
         characterization.boundVar = boundVar;
@@ -58,9 +49,13 @@ class LoopCharacterizer {
         characterization.increment = increment;
         characterization.op = op;
 
-        if ((inductionVar == boundVar) || (boundVar == incrementVar)) {
-            const tripCount = LoopCharacterizer
-                .#calculateTripCount(initialVal, bound, increment, op);
+        if (inductionVar == boundVar || boundVar == incrementVar) {
+            const tripCount = LoopCharacterizer.#calculateTripCount(
+                initialVal,
+                bound,
+                increment,
+                op
+            );
             characterization.tripCount = tripCount;
         }
         return characterization;
@@ -76,8 +71,8 @@ class LoopCharacterizer {
             bound: -1,
             increment: -1,
             op: "nop",
-            tripCount: -1
-        }
+            tripCount: -1,
+        };
     }
 
     static #calculateTripCount(initialVal, bound, increment, op) {
@@ -100,8 +95,7 @@ class LoopCharacterizer {
             if (increment == 1 || increment == 0) {
                 return -1;
             }
-            return Math.floor(LoopCharacterizer
-                .logBase(increment, iterationSpace));
+            return Math.floor(LoopCharacterizer.logBase(increment, iterationSpace));
         }
         return -1;
     }
@@ -120,16 +114,21 @@ class LoopCharacterizer {
             const varDecl = initExpr.children[0];
             const name = varDecl.name;
 
-            if (varDecl.numChildren == 1 && varDecl.children[0].instanceOf("intLiteral")) {
+            if (
+                varDecl.numChildren == 1 &&
+                varDecl.children[0].instanceOf("intLiteral")
+            ) {
                 const initVal = varDecl.children[0].value;
                 return [initVal, name];
-            }
-            else {
+            } else {
                 return [-1, name];
             }
         }
         // case: i = 0
-        if (initExpr.children[0].instanceOf("binaryOp") && initExpr.children[0].kind == "assign") {
+        if (
+            initExpr.children[0].instanceOf("binaryOp") &&
+            initExpr.children[0].kind == "assign"
+        ) {
             const binaryOp = initExpr.children[0];
             const lhs = binaryOp.children[0];
             const rhs = binaryOp.children[1];
@@ -138,14 +137,15 @@ class LoopCharacterizer {
                 const initVal = rhs.value;
                 const name = lhs.name;
                 return [initVal, name];
-            }
-            else
-                return [-1, "nil"];
+            } else return [-1, "nil"];
         }
     }
 
     static #getConditionData(condExpr) {
-        if (condExpr.numChildren == 1 && condExpr.children[0].instanceOf("binaryOp")) {
+        if (
+            condExpr.numChildren == 1 &&
+            condExpr.children[0].instanceOf("binaryOp")
+        ) {
             const binaryOp = condExpr.children[0];
             const lhs = binaryOp.children[0];
             const rhs = binaryOp.children[1];
@@ -155,7 +155,8 @@ class LoopCharacterizer {
                 const bound = rhs.value;
 
                 switch (binaryOp.kind) {
-                    case "lt": case "gt":
+                    case "lt":
+                    case "gt":
                         return [bound, boundVar];
                     case "le":
                         return [bound + 1, boundVar];
@@ -188,12 +189,13 @@ class LoopCharacterizer {
 
     static #getIncrementData(incExpr) {
         if (incExpr.numChildren == 1 && incExpr.children[0].instanceOf("unaryOp")) {
-            return LoopCharacterizer
-                .#handleUnaryIncrement(incExpr);
+            return LoopCharacterizer.#handleUnaryIncrement(incExpr);
         }
-        if (incExpr.numChildren == 1 && incExpr.children[0].instanceOf("binaryOp")) {
-            return LoopCharacterizer
-                .#handleBinaryIncrement(incExpr);
+        if (
+            incExpr.numChildren == 1 &&
+            incExpr.children[0].instanceOf("binaryOp")
+        ) {
+            return LoopCharacterizer.#handleBinaryIncrement(incExpr);
         }
     }
 
@@ -237,7 +239,11 @@ class LoopCharacterizer {
             opKind = binaryOp.kind;
         }
         // e.g., i = i + 2
-        else if (lhs.instanceOf("varref") && rhs.instanceOf("binaryOp") && binaryOp.kind == "assign") {
+        else if (
+            lhs.instanceOf("varref") &&
+            rhs.instanceOf("binaryOp") &&
+            binaryOp.kind == "assign"
+        ) {
             incVar = lhs.name;
             const childOp = rhs;
             const childLhs = childOp.children[0];
@@ -249,8 +255,7 @@ class LoopCharacterizer {
             if (childVar.name == incVar) {
                 inc = childInc.value;
                 opKind = childOp.kind;
-            }
-            else {
+            } else {
                 return [-1, "nil", "nop"];
             }
         }
@@ -260,13 +265,17 @@ class LoopCharacterizer {
         }
 
         switch (opKind) {
-            case "add": case "add_assign":
+            case "add":
+            case "add_assign":
                 return [inc, incVar, "add"];
-            case "sub": case "sub_assign":
+            case "sub":
+            case "sub_assign":
                 return [-inc, incVar, "sub"];
-            case "mul": case "mul_assign":
+            case "mul":
+            case "mul_assign":
                 return [inc, incVar, "mul"];
-            case "div": case "div_assign":
+            case "div":
+            case "div_assign":
                 return [inc, incVar, "div"];
             default:
                 return [-1, incVar, "nop"];
@@ -274,7 +283,9 @@ class LoopCharacterizer {
     }
 
     static #handleWhileLoop(loop) {
-        println("[LoopCharacterizer] ERROR: while and do-while loops are not yet supported");
-        return -1;
+        println(
+            "[LoopCharacterizer] ERROR: while and do-while loops are not yet supported"
+        );
+        return LoopCharacterizer.#getCharacterizationTemplate();
     }
 }
